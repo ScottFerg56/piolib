@@ -3,7 +3,7 @@
 FLogger FLogger::flog;
 flog_print_t FLogger::printer;
 
-int FLogger::flog_printfv(const char *format, va_list arg)
+int FLogger::printfv(const char *format, va_list arg)
 {
     static char loc_buf[64];
     char * temp = loc_buf;
@@ -25,12 +25,12 @@ int FLogger::flog_printfv(const char *format, va_list arg)
     return len;
 }
 
-int FLogger::flog_printf(const char *format, ...)
+int FLogger::printf(const char *format, ...)
 {
     int len;
     va_list arg;
     va_start(arg, format);
-    len = flog_printfv(format, arg);
+    len = printfv(format, arg);
     va_end(arg);
     return len;
 }
