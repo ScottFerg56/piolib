@@ -31,7 +31,7 @@ namespace FLogger
         (*printer)(temp);
         while (level == FLOG_FATAL)
         {
-            delay(5000);
+            delay(1000);
             (*printer)(temp);
         }
         if(len >= sizeof(loc_buf))
