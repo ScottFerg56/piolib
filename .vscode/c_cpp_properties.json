@@ -1,0 +1,27 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "C:/.platformio/packages/framework-arduino-avr/cores/arduino",
+                "C:/.platformio/packages/framework-arduinoespressif32/variants/adafruit_feather_esp32_v2",
+                "C:/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/esp_wifi/include",
+                "C:/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/esp_common/include",
+                "C:/.platformio/packages/toolchain-xtensa-esp32/xtensa-esp32-elf/include",
+                "C:/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/esp_hw_support/include",
+                "C:/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/esp_event/include"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "compilerPath": "C:/.platformio/packages/toolchain-atmelavr/bin/avr-gcc.exe",
+            "cStandard": "c11",
+            "cppStandard": "gnu++14",
+            "intelliSenseMode": "windows-gcc-x64"
+        }
+    ],
+    "version": 4
+}
