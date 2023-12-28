@@ -24,11 +24,12 @@ Entity* Domain::GetEntity(EntityID entity)
     }
     // no match is an error! not fatal here, but probably will be?!
     floge("entity not found: %i", entity);
-    return Entities[0];
+    return nullptr;
 }
 
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
 {
+    Singleton->DataSent = false;
     if (status != ESP_NOW_SEND_SUCCESS)
         flogw("Delivery Fail");
 }
@@ -128,8 +129,22 @@ void Domain::ProcessChanges(propChange_cb cb)
     // if there are any Packets to send
     if (cnt > 0)
     {
+        if (DataSent)
+        {
+            unsigned long ms = millis();
+            while (DataSent)
+            {
+                if (millis() - ms > 100)
+                    DataSent = false;
+            }
+        }
+
+        DataSent = true;
         esp_err_t result = esp_now_send(PeerInfo.peer_addr, (uint8_t*)&packets, cnt * sizeof(Packet));
         if (result != ESP_OK)
-            floge("Error sending data");
+        {
+            floge("Error sending data: %s", esp_err_to_name(result));
+            DataSent = false;
+        }
     }
 }

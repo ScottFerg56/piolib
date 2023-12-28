@@ -14,6 +14,7 @@ enum EntityID : uint8_t
     EntityID_RightMotor,
     EntityID_RearMotor,
     EntityID_Head,
+    EntityID_NavLights,
     EntityID_Last
 };
 
@@ -60,7 +61,7 @@ public:
      * 
      * @param property The ID of the Property to return
      * @return Property* A pointer to the Property with the specified ID
-     * @remarks Not finding the ID is reported as an error and the first Property in the list is returned
+     * @remarks Not finding the ID returns nullptr
      */
     Property* GetProperty(PropertyID property);
 

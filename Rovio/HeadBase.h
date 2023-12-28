@@ -10,15 +10,19 @@ class HeadBase : public Entity
 {
 public:
     /**
+     * @brief The desired Power for the head motor [-100..100]
+     */
+    Property Goal = Property(PropertyID_Goal, "Goal", false, true);
+    /**
      * @brief The Power applied to the Head motor, [-255..255],
      *      positive values moving the Head UP and negative DOWN
      */
-    Property Power = Property(PropertyID_Power, "Power", true, true);
+    Property Power = Property(PropertyID_Power, "Power", true, false);
     /**
      * @brief The Position of the head, [0..100], but perhaps with lower resolution
      */
     Property Position = Property(PropertyID_Position, "Pos", true, false);
-    Property* pa[3] = { &Power, &Position, nullptr };
+    Property* pa[4] = { &Goal, &Power, &Position, nullptr };
     /**
      * @brief Construct a new Head Base object
      * 

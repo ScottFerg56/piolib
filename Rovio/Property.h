@@ -2,6 +2,7 @@
 #define _PROPERTY_H
 
 #include <Arduino.h>
+#include "FLogger.h"
 
 enum PropertyID : uint8_t
 {
@@ -11,6 +12,9 @@ enum PropertyID : uint8_t
     PropertyID_Power,
     PropertyID_DirectDrive,
     PropertyID_Position,
+    PropertyID_Animation,
+    PropertyID_Iterations,
+    PropertyID_Brightness,
     // controller-only properties:
     PropertyID_ControlMode,
     PropertyID_Last
@@ -56,6 +60,8 @@ public:
         // settling on the original value and Changed will be reported as set
         // even though the value appears the same!
         Changed |= Value != value;
+        //if (Changed)
+        //    flogd("change prop: %i  %i -> %i", ID, Value, value);
         Value = value;
     }
 
