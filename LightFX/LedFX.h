@@ -27,8 +27,8 @@ public:
         digitalWrite(Pins ? Pins[pixel] : Pin, color != 0 ? HIGH : LOW);
     }
     virtual void Show() {}
-protected:
-    const uint8_t* Pins;
-    uint8_t Pin;
+    protected:
+    const uint8_t* Pins = nullptr;
+    uint8_t Pin = -1;
     uint8_t Length;
 };
