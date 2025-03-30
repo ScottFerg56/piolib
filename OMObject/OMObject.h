@@ -18,6 +18,8 @@ public:
             return Parent->GetPath() + GetID();
         return "";
     }
+    virtual void        Dump() = 0;
+    OMNode*             MyRoot() { return Parent ? Parent->MyRoot() : this; }
 };
 
 class OMObject;
@@ -38,6 +40,12 @@ public:
     virtual OMT         GetType() = 0;
     virtual void        ToString(String& s) = 0;
     virtual bool        FromString(String& s) = 0;
+    void                SavePref();
+    void                LoadPref();
+    void                DumpPref();
+    void                Dump();
+    void                Fetch();
+
     // virtual bool IsOutput() = 0;
     // virtual bool IsInput() = 0;
 
@@ -61,8 +69,13 @@ public:
     OMProperty*         GetProperty(char propertyID);
     OMObject*           GetObject(char objectID);
     OMNode*             NodeFromPath(String path, int& inx);
-    using EnumPropFn = void (*)(OMNode* p);
-    void                TraverseNodes(EnumPropFn fn);
+    using EnumNodeFn = void (*)(OMNode* p);
+    void                TraverseNodes(EnumNodeFn fn);
+    using EnumPropFn = void (*)(OMProperty* p);
+    void                TraverseProperties(EnumPropFn fn);
+    using EnumObjFn = void (*)(OMObject* p);
+    void                TraverseObjects(EnumObjFn fn);
+    void                Dump();
     void                AddObject(OMObject* o)
     {
         Objects.push_back(o);
@@ -166,10 +179,17 @@ public:
 class Root : public OMObject
 {
 public:
+    using SendFn = void (*)(String cmd);
 	Root() { }
+	void            SetSend(SendFn send) { Send = send; }
     char            GetID() { return 'R'; }
     const char*     GetName() { return "Root"; }
 	virtual void	Setup();
 	virtual void	Run();
     void            Command(String cmd);
+    void            SendPacket(String cmd) { if (Send) Send(cmd); }
+    void            AddPacket(String cmd);
+private:
+    String          Packet;
+    SendFn          Send;
 };

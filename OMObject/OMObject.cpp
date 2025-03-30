@@ -1,6 +1,68 @@
 #include "OMObject.h"
 #include <Preferences.h>
 
+const char* OMPrefNamespace = "rcvr OM";
+
+void OMProperty::SavePref()
+{
+    Preferences prefs;
+    auto path = GetPath();
+    String v;
+    ToString(v);
+    prefs.begin(OMPrefNamespace, false);
+    flogi("property path: %s  name: %s  pref: [%s]", path, GetName(), v);
+    auto ret = prefs.putString(path.c_str(), v);
+    if (ret == 0)
+        floge("preferences write error property path: %s  name: %s  pref: [%s]", path, GetName(), v);
+    prefs.end();
+}
+
+void OMProperty::LoadPref()
+{
+    Preferences prefs;
+    auto path = GetPath();
+    prefs.begin(OMPrefNamespace, false);
+    String v = prefs.isKey(path.c_str()) ? prefs.getString(path.c_str()) : "";
+    if (v.length() > 0)
+    {
+        flogv("property path: %s  name: %s  pref: [%s]", path, GetName(), v);
+        FromString(v);
+    }
+    prefs.end();
+}
+
+void OMProperty::DumpPref()
+{
+    Preferences prefs;
+    auto path = GetPath();
+    prefs.begin(OMPrefNamespace, false);
+    if (prefs.isKey(path.c_str()))
+    {
+        String v = prefs.getString(path.c_str());
+        flogi("property path: %s  name: %s  pref: [%s]", path, GetName(), v);
+    }
+    prefs.end();
+}
+
+void OMProperty::Dump()
+{
+    String v;
+    ToString(v);
+    flogi("property path: %s  name: %s  value: %s", GetPath(), GetName(), v.c_str());
+}
+
+void OMProperty::Fetch()
+{
+    if (!Changed)
+        return;
+        Changed = false;
+    String cmd;
+    cmd.concat('=');
+    cmd.concat(GetPath());
+    ToString(cmd);
+    ((Root*)MyRoot())->AddPacket(cmd);
+}
+
 OMNode* OMObject::NodeFromPath(String path, int& inx)
 {
     // flogd("path: %s  inx: %d", path.c_str(), inx);
@@ -41,7 +103,7 @@ OMObject* OMObject::GetObject(char objectID)
     return nullptr;
 }
 
-void OMObject::TraverseNodes(EnumPropFn fn)
+void OMObject::TraverseNodes(EnumNodeFn fn)
 {
     fn(this);
     for (auto p : Properties)
@@ -50,99 +112,55 @@ void OMObject::TraverseNodes(EnumPropFn fn)
         o->TraverseNodes(fn);
 }
 
+void OMObject::TraverseProperties(EnumPropFn fn)
+{
+    for (auto p : Properties)
+        fn(p);
+    for (auto o : Objects)
+        o->TraverseProperties(fn);
+}
+
+void OMObject::TraverseObjects(EnumObjFn fn)
+{
+    fn(this);
+    for (auto o : Objects)
+        o->TraverseObjects(fn);
+}
+
+void OMObject::Dump()
+{
+    flogi("object path: %s  name: %s", GetPath(), GetName());
+}
+
 void Root::Setup()
 {
     for (auto o : Objects)
         o->Setup();
+    TraverseProperties([](OMProperty* p) { p->Changed = false; });
 }
 
 void Root::Run()
 {
     for (auto o : Objects)
         o->Run();
-}
 
-void DumpNode(OMNode* node)
-{
-    if (node->IsObject())
+    TraverseProperties([](OMProperty* p) { p->Fetch(); });
+    if (Packet.length() > 0)
     {
-        auto o = (OMObject*)node;
-        flogi("object path: %s  name: %s", o->GetPath(), o->GetName());
-    }
-    else
-    {
-        auto p = (OMProperty*)node;
-        String v;
-        p->ToString(v);
-        flogi("property path: %s  name: %s  value: %s", p->GetPath(), p->GetName(), v.c_str());
+        SendPacket(Packet);
+        Packet.clear();
     }
 }
 
-const char* OMPrefNamespace = "rcvr OM";
-
-void DumpNodePrefs(OMNode* node)
+void Root::AddPacket(String cmd)
 {
-    if (node->IsObject())
+    if (Packet.length() + cmd.length() > 200)
     {
-        auto o = (OMObject*)node;
-        flogi("object path: %s  name: %s", o->GetPath(), o->GetName());
+        SendPacket(Packet);
+        Packet.clear();
     }
-    else
-    {
-        Preferences prefs;
-        auto p = (OMProperty*)node;
-        auto path = p->GetPath();
-        prefs.begin(OMPrefNamespace, false);
-        String v = prefs.isKey(path.c_str()) ? prefs.getString(path.c_str()) : "";
-        flogi("property path: %s  name: %s  pref: [%s]", path, p->GetName(), v);
-        prefs.end();
-    }
-}
-
-void SaveNodePrefs(OMNode* node)
-{
-    if (node->IsObject())
-    {
-        auto o = (OMObject*)node;
-        flogi("object path: %s  name: %s", o->GetPath(), o->GetName());
-    }
-    else
-    {
-        Preferences prefs;
-        auto p = (OMProperty*)node;
-        auto path = p->GetPath();
-        String v;
-        p->ToString(v);
-        prefs.begin(OMPrefNamespace, false);
-        flogi("property path: %s  name: %s  pref: [%s]", path, p->GetName(), v);
-        auto ret = prefs.putString(path.c_str(), v);
-        if (ret == 0)
-            floge("preferences write error property path: %s  name: %s  pref: [%s]", path, p->GetName(), v);
-        prefs.end();
-    }
-}
-
-void LoadNodePrefs(OMNode* node)
-{
-    if (node->IsObject())
-    {
-        auto o = (OMObject*)node;
-        flogv("object path: %s  name: %s", o->GetPath(), o->GetName());
-    }
-    else
-    {
-        Preferences prefs;
-        auto p = (OMProperty*)node;
-        auto path = p->GetPath();
-        prefs.begin(OMPrefNamespace, false);
-        String v = prefs.isKey(path.c_str()) ? prefs.getString(path.c_str()) : "";
-        if (v.length() > 0)
-        {
-            flogv("property path: %s  name: %s  pref: [%s]", path, p->GetName(), v);
-            p->FromString(v);
-        }
-        prefs.end();
-    }
+    Packet.concat(cmd);
+    Packet.concat(';');
 }
 
 void Root::Command(String cmd)
@@ -189,30 +207,34 @@ void Root::Command(String cmd)
         }
         break;
     case '?':
+        if (node->IsObject())
+            ((OMObject*)node)->TraverseProperties([](OMProperty* p) { p->Changed = true; });
+        else
+            ((OMProperty*)node)->Changed = true;
         break;
     case '*':
         if (node->IsObject())
-            ((OMObject*)node)->TraverseNodes(DumpNode);
+            ((OMObject*)node)->TraverseNodes([](OMNode* n) { n->Dump(); });
         else
-            DumpNode((OMProperty*)node);
+            node->Dump();
         break;
     case '>':
         if (node->IsObject())
-            ((OMObject*)node)->TraverseNodes(SaveNodePrefs);
+            ((OMObject*)node)->TraverseProperties([](OMProperty* p) { p->SavePref(); });
         else
-            SaveNodePrefs((OMProperty*)node);
+            ((OMProperty*)node)->SavePref();
         break;
     case '<':
         if (node->IsObject())
-            ((OMObject*)node)->TraverseNodes(LoadNodePrefs);
+            ((OMObject*)node)->TraverseProperties([](OMProperty* p) { p->LoadPref(); });
         else
-            LoadNodePrefs((OMProperty*)node);
+            ((OMProperty*)node)->LoadPref();
         break;
     case '!':
         if (node->IsObject())
-            ((OMObject*)node)->TraverseNodes(DumpNodePrefs);
+            ((OMObject*)node)->TraverseProperties([](OMProperty* p) { p->DumpPref(); });
         else
-            DumpNodePrefs((OMProperty*)node);
+            ((OMProperty*)node)->DumpPref();
         break;
     default:
         floge("invalid packet operation: [%c]", operation);
