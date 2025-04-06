@@ -55,12 +55,12 @@ void OMProperty::Fetch()
 {
     if (!Changed)
         return;
-        Changed = false;
+    Changed = false;
     String cmd;
     cmd.concat('=');
     cmd.concat(GetPath());
     ToString(cmd);
-    ((Root*)MyRoot())->AddPacket(cmd);
+    ((Root*)MyRoot())->SendPacket(cmd);
 }
 
 OMNode* OMObject::NodeFromPath(String path, int& inx)
@@ -152,21 +152,8 @@ void Root::Run()
     }
 }
 
-void Root::AddPacket(String cmd)
-{
-    if (Packet.length() + cmd.length() > 200)
-    {
-        SendPacket(Packet);
-        Packet.clear();
-    }
-    Packet.concat(cmd);
-    Packet.concat(';');
-}
-
 void Root::Command(String cmd)
 {
-    flogv("command packet: [%s]", cmd);
-
     int inx = 0;
     if (inx >= cmd.length())
     {

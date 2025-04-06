@@ -188,7 +188,6 @@ public:
 	virtual void	Run();
     void            Command(String cmd);
     void            SendPacket(String cmd) { if (Send) Send(cmd); }
-    void            AddPacket(String cmd);
 private:
     String          Packet;
     SendFn          Send;
