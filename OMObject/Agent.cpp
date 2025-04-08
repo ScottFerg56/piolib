@@ -112,6 +112,7 @@ void Agent::OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
 
 void Agent::OnDataRecv(const uint8_t *mac_addr, const uint8_t *pData, int len)
 {
+    // flogv("%02X:%02X:%02X:%02X:%02X:%02X", mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
     DataConnected = true;
     if (len > 0)
     {

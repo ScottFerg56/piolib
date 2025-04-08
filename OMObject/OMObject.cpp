@@ -60,7 +60,15 @@ void OMProperty::Fetch()
     cmd.concat('=');
     cmd.concat(GetPath());
     ToString(cmd);
-    ((Root*)MyRoot())->SendPacket(cmd);
+    ((Root*)MyRoot())->SendCmd(cmd);
+}
+
+void OMProperty::Pull(bool change)
+{
+    auto obj = (OMObject*)Parent;
+    if (obj->Connector)
+        obj->Connector->Pull(obj, this);
+    Changed |= change;
 }
 
 OMNode* OMObject::NodeFromPath(String path, int& inx)
@@ -103,6 +111,62 @@ OMObject* OMObject::GetObject(char objectID)
     return nullptr;
 }
 
+void OMObject::AddProperty(OMProperty* p)
+{
+    // flogv("adding property %s  type: %d", p->GetName(), p->GetType());
+    Properties.push_back(p);
+    p->Parent = this;
+    if (Connector)
+        Connector->Pull(this, p);
+}
+
+void OMObject::AddProperties(OMPropDef* def)
+{
+    while (def && def->Id)
+        AddProperty(def++);
+}
+
+void OMObject::AddProperty(OMPropDef* def)
+{
+    OMProperty* prop;
+    switch (def->Type)
+    {
+    case OMT_BOOL:
+        prop = new OMPropertyBool(def->Id, def->Name);
+        break;
+    case OMT_LONG:
+        prop = new OMPropertyLong(def->Id, def->Name, def->Min, def->Max, def->Base);
+        break;
+    case OMT_CHAR:
+        prop = new OMPropertyChar(def->Id, def->Name, def->Valid);
+        break;
+    }
+    AddProperty(prop);
+}
+
+void OMObject::AddObject(OMObject* o)
+{
+    Objects.push_back(o);
+    o->Parent = this;
+    // flogv("adding object %s : %s", o->Parent->GetName(), o->GetName());
+    if (o->Connector)
+        o->Connector->Init(o);
+}
+
+void OMObject::AddObjects(OMObjDef* def)
+{
+    while (def && def->Id)
+        AddObject(def++);
+}
+
+void OMObject::AddObject(OMObjDef* def)
+{
+    auto obj = new OMObject(def->Id, def->Name, def->Connector);
+    AddObject(obj);
+    obj->AddProperties(def->Properties);
+    obj->AddObjects(def->Objects);
+}
+
 void OMObject::TraverseNodes(EnumNodeFn fn)
 {
     fn(this);
@@ -132,24 +196,66 @@ void OMObject::Dump()
     flogi("object path: %s  name: %s", GetPath(), GetName());
 }
 
+void OMPropertyLong::Set(long value)
+{
+    if (value < GetMin() || value > GetMax())
+    {
+        floge("long value out of range: [%d]", value);
+        return;
+    }
+    if (Get() == value)
+        return;
+    Changed = true;
+    Value = value;
+    auto conn = ((OMObject*)Parent)->Connector;
+    if (conn)
+        conn->Push((OMObject*)Parent, this);
+}
+
+void OMPropertyBool::Set(bool value)
+{
+    if (Get() == value)
+        return;
+    Changed = true;
+    Value = value;
+    auto conn = ((OMObject*)Parent)->Connector;
+    if (conn)
+        conn->Push((OMObject*)Parent, this);
+}
+
+bool OMPropertyChar::FromString(String& s)
+{
+    char c = s[0];
+    auto p = strchr(Valid, c);
+    if (!p)
+    {
+        floge("invalid char value: [%c]", c);
+        return false;
+    }
+    Set(c);
+    s.remove(0, 1);
+    return true;
+}
+
+void OMPropertyChar::Set(char value)
+{
+    if (Get() == value)
+        return;
+    Changed = true;
+    Value = value;
+    auto conn = ((OMObject*)Parent)->Connector;
+    if (conn)
+        conn->Push((OMObject*)Parent, this);
+}
+
 void Root::Setup()
 {
-    for (auto o : Objects)
-        o->Setup();
     TraverseProperties([](OMProperty* p) { p->Changed = false; });
 }
 
 void Root::Run()
 {
-    for (auto o : Objects)
-        o->Run();
-
     TraverseProperties([](OMProperty* p) { p->Fetch(); });
-    if (Packet.length() > 0)
-    {
-        SendPacket(Packet);
-        Packet.clear();
-    }
 }
 
 void Root::Command(String cmd)
@@ -168,6 +274,7 @@ void Root::Command(String cmd)
         inx++;
     }
     auto node = NodeFromPath(cmd, inx);
+    // flogv("node: %s", node->GetName());
     if (!node)
     {
         if (!rooted)
@@ -188,7 +295,7 @@ void Root::Command(String cmd)
             }
             auto p = (OMProperty*)node;
             auto v = cmd.substring(inx);
-            flogv("assign %s to %s", v, p->GetName());
+            flogv("assign %s to %s : %s", v, p->Parent->GetName(), p->GetName());
             // UNDONE: no need for call to mod string??
             p->FromString(v);
         }
