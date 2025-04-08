@@ -5,20 +5,20 @@
 #include <WiFi.h>
 #include <queue>
 #include "FS.h"
+#include "OMObject.h"
 
 class Agent
 {
 public:
     using   CommandFn = void (*)(String cmd);
-    void    Setup(FS* pfs, uint8_t peerMacAddress[], CommandFn cmdFn);
+    void    Setup(FS* pfs, uint8_t peerMacAddress[], Root* proot);
     void    Loop();
-    bool    SendData(const uint8_t *pData, int len);
-    void    SendCmd(String cmd);
+    bool    Send(const uint8_t *pData, int len);
+    void    Send(String cmd);
     void    StartFileTransfer(String filePath);
     static  Agent& GetInstance() { return agent; }
     void    OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status);
     void    OnDataRecv(const uint8_t *mac_addr, const uint8_t *pData, int len);
-    String  FileReceived;
     // Delete copy constructor and assignment operator to prevent copying singleton
     Agent(const Agent&) = delete;
     Agent& operator=(const Agent&) = delete;
@@ -30,7 +30,7 @@ protected:
     bool lockInput = false;
     std::queue<String> inputCommands;
     std::queue<String> outputCommands;
-    CommandFn CmdFn;
+    Root* pRoot;
 
     struct FilePacketHdr
     {

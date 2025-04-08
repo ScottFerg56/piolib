@@ -1,4 +1,5 @@
 #include "OMObject.h"
+#include "Agent.h"
 #include <Preferences.h>
 
 const char* OMPrefNamespace = "rcvr OM";
@@ -248,8 +249,9 @@ void OMPropertyChar::Set(char value)
         conn->Push((OMObject*)Parent, this);
 }
 
-void Root::Setup()
+void Root::Setup(Agent* pagent)
 {
+    pAgent = pagent;
     TraverseProperties([](OMProperty* p) { p->Changed = false; });
 }
 
@@ -335,3 +337,5 @@ void Root::Command(String cmd)
         break;
     }
 }
+
+void Root::SendCmd(String cmd) { pAgent->Send(cmd); }

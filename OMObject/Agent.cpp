@@ -3,7 +3,7 @@
 
 // TODO:
 //      idle handshakes
-//      SendData errors proper interaction with file transfer
+//      Send errors proper interaction with file transfer
 
 void DataSentCb(const uint8_t *mac_addr, esp_now_send_status_t status)
 {
@@ -15,10 +15,10 @@ void DataRecvCb(const uint8_t *mac_addr, const uint8_t *pData, int len)
     Agent::GetInstance().OnDataRecv(mac_addr, pData, len);
 }
 
-void Agent::Setup(FS* pfs, uint8_t peerMacAddress[], CommandFn cmdFn)
+void Agent::Setup(FS* pfs, uint8_t peerMacAddress[], Root* proot)
 {
     pFS = pfs;
-    CmdFn = cmdFn;
+    pRoot = proot;
 
     // flogi("WIFI init");
     if (!WiFi.mode(WIFI_STA))
@@ -47,13 +47,13 @@ void Agent::Loop(void)
     if (FilePacketSend)
         SendNextFilePacket();
 
-    if (!inputCommands.empty() && !lockInput && CmdFn)
+    if (!inputCommands.empty() && !lockInput)
     {
         // process input commnads
         auto cmd = inputCommands.front();
         inputCommands.pop();
         flogv("Input command: [%s]", cmd.c_str());
-        CmdFn(cmd);
+        pRoot->Command(cmd);
         // prioritize input commands over output commands
         return;
     }
@@ -76,7 +76,7 @@ void Agent::Loop(void)
             len += cmdLen;
         }
         flogv("Send commands: [%s]", data);
-        SendData(data, len);
+        Send(data, len);
     }
 }
 
@@ -130,7 +130,7 @@ void Agent::OnDataRecv(const uint8_t *mac_addr, const uint8_t *pData, int len)
                 flogv("Starting transfer: %s  #packets: %lu", FilePath.c_str(), FilePacketCount);
                 pFS->remove(("/" + FilePath).c_str());
                 // respond with ACK
-                SendCmd("3");
+                Send("3");
             }
             break;
         case '2':
@@ -145,7 +145,7 @@ void Agent::OnDataRecv(const uint8_t *mac_addr, const uint8_t *pData, int len)
                     FilePacketNumber = 0;
                     FilePacketCount = 0;
                     FilePath = "";
-                    SendCmd("4");   // terminate transfer
+                    Send("4");   // terminate transfer
                     return;
                 }
                 //Serial.println("chunk NUMBER = " + String(currentTransmitCurrentPosition));
@@ -156,7 +156,7 @@ void Agent::OnDataRecv(const uint8_t *mac_addr, const uint8_t *pData, int len)
                     FilePacketNumber = 0;
                     FilePacketCount = 0;
                     FilePath = "";
-                    SendCmd("4");   // terminate transfer
+                    Send("4");   // terminate transfer
                     return;
                 }
                 file.write(pData + sizeof(hdr), len - sizeof(hdr));
@@ -166,17 +166,17 @@ void Agent::OnDataRecv(const uint8_t *mac_addr, const uint8_t *pData, int len)
         
                 if (FilePacketNumber == FilePacketCount)
                 {
-                    FileReceived = FilePath;
                     FilePacketNumber = 0;
                     FilePacketCount = 0;
-                    FilePath = "";
                     flogv("File transfer complete");
+                    pRoot->ReceivedFile(FilePath);
+                    FilePath = "";
                 }
                 else
                 {
                     ++FilePacketNumber;
                 }
-                SendCmd("3");   // ACK the packet
+                Send("3");   // ACK the packet
             }
             break;
         case '3':
@@ -230,7 +230,7 @@ void Agent::OnDataRecv(const uint8_t *mac_addr, const uint8_t *pData, int len)
     }
 }
 
-bool Agent::SendData(const uint8_t *pData, int len)
+bool Agent::Send(const uint8_t *pData, int len)
 {
     if (DataSent)
     {
@@ -254,7 +254,7 @@ bool Agent::SendData(const uint8_t *pData, int len)
     return true;
 }
 
-void Agent::SendCmd(String cmd)
+void Agent::Send(String cmd)
 {
     outputCommands.push(cmd);
 }
@@ -287,7 +287,7 @@ void Agent::StartFileTransfer(String filePath)
     uint8_t messageArray[sizeof(hdr) + fileName.length() + 1];
     memcpy(messageArray, &hdr, sizeof(hdr));
     strcpy((char*)(messageArray + sizeof(hdr)), fileName.c_str());
-    SendData(messageArray, sizeof(messageArray));
+    Send(messageArray, sizeof(messageArray));
 }
 
 void Agent::SendNextFilePacket()
@@ -331,7 +331,7 @@ void Agent::SendNextFilePacket()
     file.seek((FilePacketNumber - 1) * FilePacketSize);
     file.readBytes((char*)messageArray + sizeof(hdr), packetDataSize);
     file.close();
-    SendData(messageArray, sizeof(messageArray));
+    Send(messageArray, sizeof(messageArray));
 }
 
 Agent Agent::agent;

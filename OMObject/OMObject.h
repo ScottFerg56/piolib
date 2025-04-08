@@ -7,12 +7,11 @@
 class OMNode
 {
 public:
-    OMNode() {}
     OMNode(char id, const char* name) : Id(id), Name(name) {}
     OMNode*             Parent;
     virtual bool        IsObject() = 0;
-    virtual char        GetID() { return Id; }
-    virtual const char* GetName() { return Name; }
+    char                GetID() { return Id; }
+    const char*         GetName() { return Name; }
     String              GetPath()
     {
         if (Parent)
@@ -67,7 +66,6 @@ struct OMObjDef
 class OMProperty : public OMNode
 {
 public:
-    OMProperty() {}
     OMProperty(char id, const char* name) : OMNode(id, name) {}
         
     bool                IsObject() override { return false; }
@@ -97,7 +95,6 @@ public:
 class OMObject : public OMNode
 {
 public:
-    OMObject() {}
     OMObject(char id, const char* name, OMConnector* connector) : OMNode(id, name), Connector(connector) {}
     bool                IsObject() override { return true; }
     OMProperty*         GetProperty(char propertyID);
@@ -126,7 +123,6 @@ public:
 class OMPropertyLong : public OMProperty
 {
 public:
-    OMPropertyLong() { }
     OMPropertyLong(char id, const char* name, long min, long max, uint8_t base) : OMProperty(id, name), Min(min), Max(max), Base(base == 0 ? 10 : 16) { }
     long Value;
 
@@ -177,7 +173,6 @@ public:
 class OMPropertyBool : public OMProperty
 {
 public:
-    OMPropertyBool() { }
     OMPropertyBool(char id, const char* name) : OMProperty(id, name) { }
     bool Value;
 
@@ -244,18 +239,17 @@ public:
     const char* Valid;
 };
 
+class Agent;
+
 class Root : public OMObject
 {
 public:
-    using SendFn = void (*)(String cmd);
-	Root() { }
-	void            SetSend(SendFn send) { Send = send; }
-    char            GetID() override { return 'R'; }
-    const char*     GetName() override { return "Root"; }
-	virtual void	Setup();
+	Root(char id, const char* name, OMConnector* connector = nullptr) : OMObject(id, name, connector) { }
+	virtual void	Setup(Agent* pagent);
 	virtual void	Run();
-    void            Command(String cmd);
-    void            SendCmd(String cmd) { if (Send) Send(cmd); }
+    virtual void    Command(String cmd);    // UNDONE: virtual temporary?
+    void            SendCmd(String cmd);
+    virtual void    ReceivedFile(String fileName) {}
 private:
-    SendFn          Send;
+    Agent*          pAgent;
 };
