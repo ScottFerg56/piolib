@@ -338,4 +338,4 @@ void Root::Command(String cmd)
     }
 }
 
-void Root::SendCmd(String cmd) { pAgent->Send(cmd); }
+void Root::SendCmd(String cmd) { pAgent->SendCmd(cmd); }
