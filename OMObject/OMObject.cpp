@@ -252,7 +252,19 @@ void OMPropertyChar::Set(char value)
 void Root::Setup(Agent* pagent)
 {
     pAgent = pagent;
-    TraverseProperties([](OMProperty* p) { p->Changed = false; });
+    if (IsDevice)
+    {
+        // traverse all properties to pull initial values
+        TraverseProperties([](OMProperty *p) {
+            p->Changed = false;
+            p->Pull();
+        });
+    }
+    else
+    {
+        // request initial values from device
+        SendCmd("?R");
+    }
 }
 
 void Root::Run()

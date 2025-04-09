@@ -244,7 +244,7 @@ class Agent;
 class Root : public OMObject
 {
 public:
-	Root(char id, const char* name, OMConnector* connector = nullptr) : OMObject(id, name, connector) { }
+	Root(bool isDevice, char id, const char* name, OMConnector* connector = nullptr) : OMObject(id, name, connector), IsDevice(isDevice) { }
 	virtual void	Setup(Agent* pagent);
 	virtual void	Run();
     virtual void    Command(String cmd);    // UNDONE: virtual temporary?
@@ -252,4 +252,5 @@ public:
     virtual void    ReceivedFile(String fileName) {}
 private:
     Agent*          pAgent;
+    bool            IsDevice = false;
 };

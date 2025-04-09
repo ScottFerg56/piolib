@@ -1,12 +1,12 @@
 #include "ESPNAgent.h"
 #include "FLogger.h"
 
-std::vector<ESPNAgent*> ESPNAgent::ESPNAgents;
-
 void DumpMac(const char* msg, const uint8_t* mac)
 {
     flogv("%s: %02X:%02X:%02X:%02X:%02X:%02X", msg, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 }
+
+std::vector<ESPNAgent*> ESPNAgent::ESPNAgents;
 
 ESPNAgent* ESPNAgent::FindAgent(const uint8_t* peerMacAddress)
 {
