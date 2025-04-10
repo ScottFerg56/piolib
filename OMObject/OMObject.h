@@ -71,25 +71,38 @@ public:
     bool                IsObject() override { return false; }
     void                Dump() override;
     virtual OMT         GetType() = 0;
-    virtual void        ToString(String& s) = 0;
-    virtual bool        FromString(String& s) = 0;
-    void                Pull(bool change = false);
+    virtual String      ToString() = 0;
+    virtual void        FromString(String s) = 0;
+    void                Pull();
+    void                Push();
+    void                Send();
     void                SavePref();
     void                LoadPref();
     void                DumpPref();
-    void                Fetch();
+};
 
-    // virtual bool IsOutput() = 0;
-    // virtual bool IsInput() = 0;
+template <typename T> class OMPropertyType : public OMProperty
+{
+public:
+    OMPropertyType(char id, const char* name) : OMProperty(id, name), Value(T()) {}
+    T Value;
+        
+    void                SetSend(T value) { Value = value; Send(); }
 
-    inline bool         CheckResetChanged()
+    T Get() { return Value; }
+    virtual void Set(T value)
     {
-        bool changed = Changed;
-        Changed = false;
-        return changed;
+        if (!Test(value))
+        {
+            floge("invalid value");
+            return;
+        }
+        if (Value == value)
+            return;
+        Value = value;
+        Push();
     }
-
-    bool                Changed = false;
+    virtual bool Test(T value) = 0;
 };
 
 class OMObject : public OMNode
@@ -99,7 +112,8 @@ public:
     bool                IsObject() override { return true; }
     OMProperty*         GetProperty(char propertyID);
     OMObject*           GetObject(char objectID);
-    OMNode*             NodeFromPath(String path, int& inx);
+    OMObject*           ObjectFromPath(String path);
+    OMProperty*         PropertyFromPath(String path, char propertyID);
     using EnumNodeFn = void (*)(OMNode* p);
     void                TraverseNodes(EnumNodeFn fn);
     using EnumPropFn = void (*)(OMProperty* p);
@@ -118,72 +132,51 @@ public:
     void*               Data = nullptr;
     std::vector<OMProperty*> Properties;
     std::vector<OMObject*> Objects;
+protected:
+    OMNode*             NodeFromPath(String path, int& inx);
 };
 
-class OMPropertyLong : public OMProperty
+class OMPropertyLong : public OMPropertyType<long>
 {
 public:
-    OMPropertyLong(char id, const char* name, long min, long max, uint8_t base) : OMProperty(id, name), Min(min), Max(max), Base(base == 0 ? 10 : 16) { }
-    long Value;
+    OMPropertyLong(char id, const char* name, long min, long max, uint8_t base) : OMPropertyType<long>(id, name), Min(min), Max(max), Base(base == 0 ? 10 : 16) {}
 
     OMT GetType() override { return OMT_LONG; }
 
-    virtual long GetMin() { return LONG_MIN; }
-    virtual long GetMax() { return LONG_MAX; }
-    bool TestRange(long value)
+    bool Test(long value) override
     {
-        if (value < GetMin() || value > GetMax())
-        {
-            floge("long value out of range: [%d]", value);
-            return false;
-        }
-        return true;
+        return value >= Min && value <= Max;
     }
 
-    void ToString(String& s) override
+    String ToString() override
     {
-        s.concat(String(Get(), GetBase()));
+        return String(Get(), Base);
     }
 
-    bool FromString(String& s) override
+    void FromString(String s) override
     {
-        const char* p = s.c_str();
         char *pend;
-        long val = strtol(p, &pend, GetBase());
-        if (pend == p || val == LONG_MAX || val == LONG_MIN)
-        {
-            floge("invalid long value: [%s]", p);
-            return false;
-        }
-        s.remove(0, pend - p);
-        Set(val);
-        return true;
+        Set(strtol(s.c_str(), &pend, Base));
     }
-
-    virtual uint8_t GetBase() { return Base; }
-
-    virtual void Set(long value);
-
-    virtual long Get() { return Value; }
-    long Min = LONG_MIN;
-    long Max = LONG_MAX;
-    uint8_t Base = 10;
+private:
+    long Min;
+    long Max;
+    uint8_t Base;
 };
 
-class OMPropertyBool : public OMProperty
+class OMPropertyBool : public OMPropertyType<bool>  // Updated to inherit from OMPropertyType<bool>
 {
 public:
-    OMPropertyBool(char id, const char* name) : OMProperty(id, name) { }
-    bool Value;
+    OMPropertyBool(char id, const char* name) : OMPropertyType<bool>(id, name) {}
 
     OMT GetType() override { return OMT_BOOL; }
 
-    void ToString(String& s) override
+    String ToString() override
     {
-        s.concat(Get() ? '1' : '0');
+        return String(Value ? '1' : '0');
     }
 
-    bool FromString(String& s) override
+    void FromString(String s) override
     {
         char c = s[0];
         switch (c)
@@ -199,32 +192,38 @@ public:
             
         default:
             floge("invalid boolean value: [%c]", c);
-            return false;
+            break;
         }
-        s.remove(0, 1);
-        return true;
     }
 
-    virtual void Set(bool value);
-
-    virtual bool Get() { return Value; }
+    bool Test(bool value) override
+    {
+        return true; // always valid
+    }
 };
 
-class OMPropertyChar : public OMProperty
+class OMPropertyChar : public OMPropertyType<char>
 {
 public:
-    OMPropertyChar(char id, const char* name, const char* valid) : OMProperty(id, name), Valid(valid) { }
-    char Value;
+    OMPropertyChar(char id, const char* name, const char* valid) : OMPropertyType<char>(id, name), Valid(valid) {}
 
     OMT GetType() override { return OMT_CHAR; }
 
-    void ToString(String& s) override
+    String ToString() override
     {
-        s.concat((char)Value);
+        return String(Value);
     }
 
-    bool FromString(String& s) override;
-
+    void FromString(String s) override
+    {
+        if (s.length() == 0)
+        {
+            floge("invalid char value");
+            return;
+        }
+        Set(s[0]);
+    }
+    
     int Index()
     {
         auto p = strchr(Valid, Value);
@@ -233,9 +232,24 @@ public:
         return p - Valid;
     }
 
-    virtual void Set(char value);
+    char FromIndex(int inx)
+    {
+        if (inx < 0 || inx >= strlen(Valid))
+            return 0;
+        return Valid[inx];
+    }
 
-    virtual char Get() { return Value; }
+    bool Test(char value) override
+    {
+        auto p = strchr(Valid, value);
+        if (!p)
+        {
+            floge("invalid char value: [%c]", value);
+            return false;
+        }
+        return true;
+    }
+protected:
     const char* Valid;
 };
 

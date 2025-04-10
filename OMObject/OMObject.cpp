@@ -8,8 +8,7 @@ void OMProperty::SavePref()
 {
     Preferences prefs;
     auto path = GetPath();
-    String v;
-    ToString(v);
+    String v = ToString();
     prefs.begin(OMPrefNamespace, false);
     flogi("property path: %s  name: %s  pref: [%s]", path, GetName(), v);
     auto ret = prefs.putString(path.c_str(), v);
@@ -47,29 +46,27 @@ void OMProperty::DumpPref()
 
 void OMProperty::Dump()
 {
-    String v;
-    ToString(v);
+    String v = ToString();
     flogi("property path: %s  name: %s  value: %s", GetPath(), GetName(), v.c_str());
 }
 
-void OMProperty::Fetch()
+void OMProperty::Send()
 {
-    if (!Changed)
-        return;
-    Changed = false;
-    String cmd;
-    cmd.concat('=');
-    cmd.concat(GetPath());
-    ToString(cmd);
-    ((Root*)MyRoot())->SendCmd(cmd);
+    ((Root*)MyRoot())->SendCmd(String('=') + GetPath() + ToString());
 }
 
-void OMProperty::Pull(bool change)
+void OMProperty::Pull()
 {
     auto obj = (OMObject*)Parent;
     if (obj->Connector)
         obj->Connector->Pull(obj, this);
-    Changed |= change;
+}
+
+void OMProperty::Push()
+{
+    auto obj = (OMObject*)Parent;
+    if (obj->Connector)
+        obj->Connector->Push(obj, this);
 }
 
 OMNode* OMObject::NodeFromPath(String path, int& inx)
@@ -90,6 +87,29 @@ OMNode* OMObject::NodeFromPath(String path, int& inx)
     if (p)
         ++inx;
     return p;
+}
+
+OMObject* OMObject::ObjectFromPath(String path)
+{
+    int inx = 0;
+    return (OMObject*)NodeFromPath(path, inx);
+}
+
+OMProperty* OMObject::PropertyFromPath(String path, char propertyID)
+{
+    auto obj = ObjectFromPath(path);
+    if (!obj)
+    {        
+        floge("object not found for path: %s", path.c_str());
+        return nullptr;
+    }
+    auto prop = obj->GetProperty(propertyID);
+    if (!prop)
+    {
+        floge("property Id %c not found for object: %s", propertyID, obj->GetName());
+        return nullptr;
+    }
+    return prop;
 }
 
 OMProperty* OMObject::GetProperty(char propertyID)
@@ -197,58 +217,6 @@ void OMObject::Dump()
     flogi("object path: %s  name: %s", GetPath(), GetName());
 }
 
-void OMPropertyLong::Set(long value)
-{
-    if (value < GetMin() || value > GetMax())
-    {
-        floge("long value out of range: [%d]", value);
-        return;
-    }
-    if (Get() == value)
-        return;
-    Changed = true;
-    Value = value;
-    auto conn = ((OMObject*)Parent)->Connector;
-    if (conn)
-        conn->Push((OMObject*)Parent, this);
-}
-
-void OMPropertyBool::Set(bool value)
-{
-    if (Get() == value)
-        return;
-    Changed = true;
-    Value = value;
-    auto conn = ((OMObject*)Parent)->Connector;
-    if (conn)
-        conn->Push((OMObject*)Parent, this);
-}
-
-bool OMPropertyChar::FromString(String& s)
-{
-    char c = s[0];
-    auto p = strchr(Valid, c);
-    if (!p)
-    {
-        floge("invalid char value: [%c]", c);
-        return false;
-    }
-    Set(c);
-    s.remove(0, 1);
-    return true;
-}
-
-void OMPropertyChar::Set(char value)
-{
-    if (Get() == value)
-        return;
-    Changed = true;
-    Value = value;
-    auto conn = ((OMObject*)Parent)->Connector;
-    if (conn)
-        conn->Push((OMObject*)Parent, this);
-}
-
 void Root::Setup(Agent* pagent)
 {
     pAgent = pagent;
@@ -256,7 +224,6 @@ void Root::Setup(Agent* pagent)
     {
         // traverse all properties to pull initial values
         TraverseProperties([](OMProperty *p) {
-            p->Changed = false;
             p->Pull();
         });
     }
@@ -269,7 +236,6 @@ void Root::Setup(Agent* pagent)
 
 void Root::Run()
 {
-    TraverseProperties([](OMProperty* p) { p->Fetch(); });
 }
 
 void Root::Command(String cmd)
@@ -316,9 +282,9 @@ void Root::Command(String cmd)
         break;
     case '?':
         if (node->IsObject())
-            ((OMObject*)node)->TraverseProperties([](OMProperty* p) { p->Changed = true; });
+            ((OMObject*)node)->TraverseProperties([](OMProperty* p) { p->Send(); });
         else
-            ((OMProperty*)node)->Changed = true;
+            ((OMProperty*)node)->Send();
         break;
     case '*':
         if (node->IsObject())
