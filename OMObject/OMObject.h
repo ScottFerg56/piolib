@@ -22,6 +22,7 @@ public:
     OMNode*             MyRoot() { return Parent ? Parent->MyRoot() : this; }
     char                Id;
     const char*         Name;
+    void*               Data = nullptr;
 };
 
 class OMObject;
@@ -129,7 +130,6 @@ public:
     void                AddProperty(OMProperty* p);
 
     OMConnector*        Connector = nullptr;
-    void*               Data = nullptr;
     std::vector<OMProperty*> Properties;
     std::vector<OMObject*> Objects;
 protected:
@@ -243,10 +243,7 @@ public:
     {
         auto p = strchr(Valid, value);
         if (!p)
-        {
-            floge("invalid char value: [%c]", value);
             return false;
-        }
         return true;
     }
 protected:
