@@ -261,6 +261,7 @@ public:
     virtual void    Command(String cmd);    // UNDONE: virtual temporary?
     void            SendCmd(String cmd);
     virtual void    ReceivedFile(String fileName) {}
+    Agent*          GetAgent() { return pAgent; }
 private:
     Agent*          pAgent;
     bool            IsDevice = false;
