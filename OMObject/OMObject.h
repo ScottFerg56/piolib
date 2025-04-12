@@ -158,9 +158,9 @@ public:
         char *pend;
         Set(strtol(s.c_str(), &pend, Base));
     }
-private:
     long Min;
     long Max;
+private:
     uint8_t Base;
 };
 
