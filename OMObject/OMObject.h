@@ -250,6 +250,29 @@ protected:
     const char* Valid;
 };
 
+class OMPropertyString : public OMPropertyType<String>
+{
+public:
+    OMPropertyString(char id, const char* name) : OMPropertyType<String>(id, name) {}
+
+    OMT GetType() override { return OMT_STRING; }
+
+    String ToString() override
+    {
+        return String(Value);
+    }
+
+    void FromString(String s) override
+    {
+        Set(s);
+    }
+    
+    bool Test(String value) override
+    {
+        return true;
+    }
+};
+
 class Agent;
 
 class Root : public OMObject

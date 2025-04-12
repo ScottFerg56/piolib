@@ -84,6 +84,8 @@ OMPropDef   RampProps[] =
 OMPropDef   SoundProps[] =
 {
     { 'p', "Play",    OMT_LONG,     0, 100 },
+    { 'v', "Volume",  OMT_LONG,     0,  21 },
+    { 'l', "List",    OMT_STRING },
     { }
 };
 

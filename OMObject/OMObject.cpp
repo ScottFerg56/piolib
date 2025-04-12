@@ -161,6 +161,9 @@ void OMObject::AddProperty(OMPropDef* def)
     case OMT_CHAR:
         prop = new OMPropertyChar(def->Id, def->Name, def->Valid);
         break;
+    case OMT_STRING:
+        prop = new OMPropertyString(def->Id, def->Name);
+        break;
     }
     AddProperty(prop);
 }
