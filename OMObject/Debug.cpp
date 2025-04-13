@@ -66,11 +66,6 @@ void Debug::Run()
                             // pipe a command to our peer
                             ((Root*)(DebugObject->MyRoot()))->SendCmd(cmd.substring(1));
                         }
-                        else if (cmd[0] == 'x')
-                        {
-                            // file transfer
-                            ((Root*)(DebugObject->MyRoot()))->GetAgent()->StartFileTransfer("/Sad R2D2.mp3");
-                        }
                         else
                         {
                             // command for ourself

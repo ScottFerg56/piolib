@@ -114,7 +114,7 @@ void ESPNAgent::OnDataRecv(const uint8_t *pData, int len)
                 flogv("Starting transfer: %s  #packets: %lu", FilePath.c_str(), FilePacketCount);
                 pFS->remove(("/" + FilePath).c_str());
                 // respond with ACK
-                SendCmd("3");
+                Send((uint8_t*)"3", 1);
             }
             break;
         case '2':
@@ -160,7 +160,8 @@ void ESPNAgent::OnDataRecv(const uint8_t *pData, int len)
                 {
                     ++FilePacketNumber;
                 }
-                SendCmd("3");   // ACK the packet
+                // ACK the packet
+                Send((uint8_t*)"3", 1);
             }
             break;
         case '3':

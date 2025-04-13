@@ -83,10 +83,10 @@ OMPropDef   RampProps[] =
 
 OMPropDef   SoundProps[] =
 {
-    { 'p', "Play",    OMT_LONG,     0, 100 },
+    { 'p', "Play",    OMT_LONG,     1, 100 },
     { 'v', "Volume",  OMT_LONG,     0,  21 },
-    { 'l', "List",    OMT_STRING },
-    { 'x', "Delete",   OMT_LONG },
+    { 'x', "Delete",  OMT_LONG,     1, 100 },
+    { 'l', "List",    OMT_STRING },     // list must be last to set Max for Play and Delete
     { }
 };
 
