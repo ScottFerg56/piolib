@@ -141,13 +141,13 @@ void OMObject::AddProperty(OMProperty* p)
         Connector->Pull(this, p);
 }
 
-void OMObject::AddProperties(OMPropDef* def)
+void OMObject::AddProperties(const OMPropDef* def)
 {
     while (def && def->Id)
         AddProperty(def++);
 }
 
-void OMObject::AddProperty(OMPropDef* def)
+void OMObject::AddProperty(const OMPropDef* def)
 {
     OMProperty* prop;
     switch (def->Type)
@@ -177,13 +177,13 @@ void OMObject::AddObject(OMObject* o)
         o->Connector->Init(o);
 }
 
-void OMObject::AddObjects(OMObjDef* def)
+void OMObject::AddObjects(const OMObjDef* def)
 {
     while (def && def->Id)
         AddObject(def++);
 }
 
-void OMObject::AddObject(OMObjDef* def)
+void OMObject::AddObject(const OMObjDef* def)
 {
     auto obj = new OMObject(def->Id, def->Name, def->Connector);
     AddObject(obj);

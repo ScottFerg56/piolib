@@ -59,8 +59,8 @@ struct OMObjDef
 {
     char        Id;
     const char* Name;
-    OMObjDef*   Objects;
-    OMPropDef*  Properties;
+    const OMObjDef*   Objects;
+    const OMPropDef*  Properties;
     OMConnector* Connector;
 };
 
@@ -122,10 +122,10 @@ public:
     using EnumObjFn = void (*)(OMObject* p);
     void                TraverseObjects(EnumObjFn fn);
     void                Dump();
-    void                AddObjects(OMObjDef* def);
-    void                AddObject(OMObjDef* def);
-    void                AddProperties(OMPropDef* def);
-    void                AddProperty(OMPropDef* def);
+    void                AddObjects(const OMObjDef* def);
+    void                AddObject(const OMObjDef* def);
+    void                AddProperties(const OMPropDef* def);
+    void                AddProperty(const OMPropDef* def);
     void                AddObject(OMObject* o);
     void                AddProperty(OMProperty* p);
 

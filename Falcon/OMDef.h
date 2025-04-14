@@ -1,6 +1,6 @@
 #pragma once
 
-OMPropDef   LightProps[] =
+const OMPropDef   LightProps[] =
 {
     { 'a', "Anim",    OMT_LONG,     0, 100 },   // UNDONE: backfill this?
     { 'o', "On",      OMT_BOOL },
@@ -11,20 +11,20 @@ OMPropDef   LightProps[] =
     { }
 };
 
-OMPropDef   GroupProps[] =
+const OMPropDef   GroupProps[] =
 {
     { 'o', "On",      OMT_BOOL },
     { }
 };
 
-OMObjDef    TubesObjs[] =
+const OMObjDef    TubesObjs[] =
 {
     { 's', "Sconce",    nullptr,    LightProps, &LightConn },
     { 'f', "Floor",     nullptr,    LightProps, &LightConn },
     { }
 };
 
-OMObjDef    HoldObjs[] =
+const OMObjDef    HoldObjs[] =
 {
     { 'y', "Bay",       nullptr,    LightProps, &LightConn },
     { 'b', "Bed",       nullptr,    LightProps, &LightConn },
@@ -37,7 +37,7 @@ OMObjDef    HoldObjs[] =
     { }
 };
 
-OMObjDef    CockpitObjs[] =
+const OMObjDef    CockpitObjs[] =
 {
     { 'm', "Monitor",   nullptr,    LightProps, &LightConn },
     { '0', "Red",       nullptr,    LightProps, &LightConn },
@@ -51,7 +51,7 @@ OMObjDef    CockpitObjs[] =
     { }
 };
 
-OMObjDef    LightObjs[] =
+const OMObjDef    LightObjs[] =
 {
     { 'e', "Engine",    nullptr,    LightProps, &LightConn },
     { 'l', "Landing",   nullptr,    LightProps, &LightConn },
@@ -66,7 +66,7 @@ OMObjDef    LightObjs[] =
     { }
 };
 
-OMPropDef   RectProps[] =
+const OMPropDef   RectProps[] =
 {
     { 's', "Sweep",    OMT_BOOL },
     { 'v', "Speed",    OMT_LONG,     0, 100 },
@@ -74,14 +74,14 @@ OMPropDef   RectProps[] =
     { }
 };
 
-OMPropDef   RampProps[] =
+const OMPropDef   RampProps[] =
 {
     { 's', "State",    OMT_CHAR,     0, 0, 0, "RrSeE" },
     { 'v', "Speed",    OMT_LONG,     0, 100 },
     { }
 };
 
-OMPropDef   SoundProps[] =
+const OMPropDef   SoundProps[] =
 {
     { 'p', "Play",    OMT_LONG,     1, 100 },
     { 'v', "Volume",  OMT_LONG,     0,  21 },
@@ -90,13 +90,13 @@ OMPropDef   SoundProps[] =
     { }
 };
 
-OMPropDef   DebugProps[] =
+const OMPropDef   DebugProps[] =
 {
     { 'l', "LogLevel", OMT_CHAR,    0, 0, 0, "NFEWIDV" },
     { }
 };
 
-OMObjDef    Objects[] =
+const OMObjDef    Objects[] =
 {
     { 'l', "Lights",    LightObjs, nullptr },
     { 'a', "Rectenna",  nullptr,   RectProps,  &RectennaConn },
