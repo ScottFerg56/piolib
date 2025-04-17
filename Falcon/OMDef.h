@@ -2,18 +2,18 @@
 
 const OMPropDef   LightProps[] =
 {
-    { 'a', "Anim",    OMT_LONG,     0, 100 },   // UNDONE: backfill this?
-    { 'o', "On",      OMT_BOOL },
-    { 'c', "Color1",  OMT_LONG,     0, 0xFFFFFF, 16 },
-    { 'd', "Color2",  OMT_LONG,     0, 0xFFFFFF, 16 },
-    { 's', "Speed",   OMT_LONG,     0, 60000 },
-    { 'r', "Reverse", OMT_BOOL },
+    { 'a', "Anim",    OMT_LONG, OMF_NONE,    0, 100 },   // UNDONE: backfill this?
+    { 'o', "On",      OMT_BOOL, OMF_NONE, },
+    { 'c', "Color1",  OMT_LONG, OMF_NONE,    0, 0xFFFFFF, 16 },
+    { 'd', "Color2",  OMT_LONG, OMF_NONE,    0, 0xFFFFFF, 16 },
+    { 's', "Speed",   OMT_LONG, OMF_NONE,    0, 60000 },
+    { 'r', "Reverse", OMT_BOOL, OMF_NONE, },
     { }
 };
 
 const OMPropDef   GroupProps[] =
 {
-    { 'o', "On",      OMT_BOOL },
+    { 'o', "On",      OMT_BOOL, OMF_NONE },
     { }
 };
 
@@ -68,31 +68,31 @@ const OMObjDef    LightObjs[] =
 
 const OMPropDef   RectProps[] =
 {
-    { 's', "Sweep",    OMT_BOOL },
-    { 'v', "Speed",    OMT_LONG,     0, 100 },
-    { 'p', "Position", OMT_LONG,     0, 100 },
+    { 's', "Sweep",    OMT_BOOL, OMF_NONE },
+    { 'v', "Speed",    OMT_LONG, OMF_NONE, 0, 100 },
+    { 'p', "Position", OMT_LONG, OMF_NONE, 0, 100 },
     { }
 };
 
 const OMPropDef   RampProps[] =
 {
-    { 's', "State",    OMT_CHAR,     0, 0, 0, "RrSeE" },
-    { 'v', "Speed",    OMT_LONG,     0, 100 },
+    { 's', "State",    OMT_CHAR, OMF_NONE, 0, 0, 0, "RrSeE" },
+    { 'v', "Speed",    OMT_LONG, OMF_NONE, 0, 100 },
     { }
 };
 
 const OMPropDef   SoundProps[] =
 {
-    { 'p', "Play",    OMT_LONG,     1, 100 },
-    { 'v', "Volume",  OMT_LONG,     0,  21 },
-    { 'x', "Delete",  OMT_LONG,     1, 100 },
-    { 'l', "List",    OMT_STRING },     // list must be last to set Max for Play and Delete
+    { 'p', "Play",    OMT_LONG,   OMF_WO_DEVICE, 1, 100 },
+    { 'v', "Volume",  OMT_LONG,   OMF_NONE,      0,  21 },
+    { 'x', "Delete",  OMT_LONG,   OMF_WO_DEVICE, 1, 100 },
+    { 'l', "List",    OMT_STRING, OMF_RO_DEVICE },     // list must be last to set Max for Play and Delete
     { }
 };
 
 const OMPropDef   DebugProps[] =
 {
-    { 'l', "LogLevel", OMT_CHAR,    0, 0, 0, "NFEWIDV" },
+    { 'l', "LogLevel", OMT_CHAR, OMF_LOCAL, 0, 0, 0, "NFEWIDV" },
     { }
 };
 

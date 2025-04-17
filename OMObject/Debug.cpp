@@ -14,7 +14,7 @@ void DebugConnector::Init(OMObject* obj)
 void DebugConnector::Push(OMObject* obj, OMProperty* prop)
 {
     auto debug = (Debug*)obj->Data;
-    auto id = prop->GetID();
+    auto id = prop->Id;
     switch (id)
     {
     case 'l':   // LogLevel
@@ -26,7 +26,7 @@ void DebugConnector::Push(OMObject* obj, OMProperty* prop)
 void DebugConnector::Pull(OMObject *obj, OMProperty *prop)
 {
     auto debug = (Debug*)obj->Data;
-    auto id = prop->GetID();
+    auto id = prop->Id;
     switch (id)
     {
     case 'l':   // LogLevel

@@ -10,10 +10,10 @@ void OMProperty::SavePref()
     auto path = GetPath();
     String v = ToString();
     prefs.begin(OMPrefNamespace, false);
-    flogi("property path: %s  name: %s  pref: [%s]", path, GetName(), v);
+    flogi("property path: %s  name: %s  pref: [%s]", path, Name, v);
     auto ret = prefs.putString(path.c_str(), v);
     if (ret == 0)
-        floge("preferences write error property path: %s  name: %s  pref: [%s]", path, GetName(), v);
+        floge("preferences write error property path: %s  name: %s  pref: [%s]", path, Name, v);
     prefs.end();
 }
 
@@ -25,7 +25,7 @@ void OMProperty::LoadPref()
     String v = prefs.isKey(path.c_str()) ? prefs.getString(path.c_str()) : "";
     if (v.length() > 0)
     {
-        flogv("property path: %s  name: %s  pref: [%s]", path, GetName(), v);
+        flogv("property path: %s  name: %s  pref: [%s]", path, Name, v);
         FromString(v);
     }
     prefs.end();
@@ -39,7 +39,7 @@ void OMProperty::DumpPref()
     if (prefs.isKey(path.c_str()))
     {
         String v = prefs.getString(path.c_str());
-        flogi("property path: %s  name: %s  pref: [%s]", path, GetName(), v);
+        flogi("property path: %s  name: %s  pref: [%s]", path, Name, v);
     }
     prefs.end();
 }
@@ -47,16 +47,22 @@ void OMProperty::DumpPref()
 void OMProperty::Dump()
 {
     String v = ToString();
-    flogi("property path: %s  name: %s  value: %s", GetPath(), GetName(), v.c_str());
+    flogi("property path: %s  name: %s  value: %s", GetPath(), Name, v.c_str());
 }
 
 void OMProperty::Send()
 {
+    if ((Flags & OMF_LOCAL) != 0)
+        return;
+    if ((Flags & OMF_WO_DEVICE) != 0 && ((Root*)MyRoot())->IsDevice)
+        return;
     ((Root*)MyRoot())->SendCmd(String('=') + GetPath() + ToString());
 }
 
 void OMProperty::Pull()
 {
+    if ((Flags & OMF_WO_DEVICE) != 0 && ((Root*)MyRoot())->IsDevice)
+        return;
     auto obj = (OMObject*)Parent;
     if (obj->Connector)
         obj->Connector->Pull(obj, this);
@@ -64,6 +70,8 @@ void OMProperty::Pull()
 
 void OMProperty::Push()
 {
+    if ((Flags & OMF_RO_DEVICE) != 0 && ((Root*)MyRoot())->IsDevice)
+        return;
     auto obj = (OMObject*)Parent;
     if (obj->Connector)
         obj->Connector->Push(obj, this);
@@ -106,7 +114,7 @@ OMProperty* OMObject::PropertyFromPath(String path, char propertyID)
     auto prop = obj->GetProperty(propertyID);
     if (!prop)
     {
-        floge("property Id %c not found for object: %s", propertyID, obj->GetName());
+        floge("property Id %c not found for object: %s", propertyID, obj->Name);
         return nullptr;
     }
     return prop;
@@ -116,7 +124,7 @@ OMProperty* OMObject::GetProperty(char propertyID)
 {
     for (auto p : Properties)
     {
-        if (p->GetID() == propertyID)
+        if (p->Id == propertyID)
             return p;
     }
     return nullptr;
@@ -126,7 +134,7 @@ OMObject* OMObject::GetObject(char objectID)
 {
     for (auto o : Objects)
     {
-        if (o->GetID() == objectID)
+        if (o->Id == objectID)
             return o;
     }
     return nullptr;
@@ -134,7 +142,7 @@ OMObject* OMObject::GetObject(char objectID)
 
 void OMObject::AddProperty(OMProperty* p)
 {
-    // flogv("adding property %s  type: %d", p->GetName(), p->GetType());
+    // flogv("adding property %s  type: %d", p->Name, p->GetType());
     Properties.push_back(p);
     p->Parent = this;
     if (Connector)
@@ -165,6 +173,7 @@ void OMObject::AddProperty(const OMPropDef* def)
         prop = new OMPropertyString(def->Id, def->Name);
         break;
     }
+    prop->Flags = def->Flags;
     AddProperty(prop);
 }
 
@@ -172,7 +181,7 @@ void OMObject::AddObject(OMObject* o)
 {
     Objects.push_back(o);
     o->Parent = this;
-    // flogv("adding object %s : %s", o->Parent->GetName(), o->GetName());
+    // flogv("adding object %s : %s", o->Parent->Name, o->Name);
     if (o->Connector)
         o->Connector->Init(o);
 }
@@ -217,7 +226,7 @@ void OMObject::TraverseObjects(EnumObjFn fn)
 
 void OMObject::Dump()
 {
-    flogi("object path: %s  name: %s", GetPath(), GetName());
+    flogi("object path: %s  name: %s", GetPath(), Name);
 }
 
 void Root::Setup(Agent* pagent)
@@ -251,13 +260,13 @@ void Root::Command(String cmd)
     }
     char operation = cmd[inx++];
     bool rooted = false;
-    if (inx < cmd.length() && cmd[inx] == GetID())
+    if (inx < cmd.length() && cmd[inx] == Id)
     {
         rooted = true;
         inx++;
     }
     auto node = NodeFromPath(cmd, inx);
-    // flogv("node: %s", node->GetName());
+    // flogv("node: %s", node->Name);
     if (!node)
     {
         if (!rooted)
@@ -273,12 +282,12 @@ void Root::Command(String cmd)
         {
             if (node->IsObject())
             {
-                floge("assignment not valid for object: %s", node->GetName());
+                floge("assignment not valid for object: %s", node->Name);
                 return;
             }
             auto p = (OMProperty*)node;
             auto v = cmd.substring(inx);
-            flogv("assign %s to %s : %s", v, p->Parent->GetName(), p->GetName());
+            flogv("assign %s to %s : %s", v.c_str(), p->Parent->Name, p->Name);
             // UNDONE: no need for call to mod string??
             p->FromString(v);
         }

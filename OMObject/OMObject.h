@@ -10,12 +10,10 @@ public:
     OMNode(char id, const char* name) : Id(id), Name(name) {}
     OMNode*             Parent;
     virtual bool        IsObject() = 0;
-    char                GetID() { return Id; }
-    const char*         GetName() { return Name; }
     String              GetPath()
     {
         if (Parent)
-            return Parent->GetPath() + GetID();
+            return Parent->GetPath() + Id;
         return "";
     }
     virtual void        Dump() = 0;
@@ -36,6 +34,14 @@ enum OMT
     OMT_STRING,
 };
 
+enum OMF
+{
+    OMF_NONE,
+    OMF_LOCAL     = 0b0001,     // do not send to peer
+    OMF_RO_DEVICE = 0b0010,     // no read only from device
+    OMF_WO_DEVICE = 0b0100,     // no write only to device
+};
+
 class OMConnector
 {
 public:
@@ -49,6 +55,7 @@ struct OMPropDef
     char        Id;
     const char* Name;
     OMT         Type;
+    OMF         Flags;
     long        Min;
     long        Max;
     long        Base;
@@ -68,6 +75,7 @@ class OMProperty : public OMNode
 {
 public:
     OMProperty(char id, const char* name) : OMNode(id, name) {}
+    OMF                 Flags;
         
     bool                IsObject() override { return false; }
     void                Dump() override;
@@ -285,7 +293,7 @@ public:
     void            SendCmd(String cmd);
     virtual void    ReceivedFile(String fileName) {}
     Agent*          GetAgent() { return pAgent; }
+    bool            IsDevice = false;
 private:
     Agent*          pAgent;
-    bool            IsDevice = false;
 };
