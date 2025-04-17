@@ -6,6 +6,8 @@ const char* OMPrefNamespace = "rcvr OM";
 
 void OMProperty::SavePref()
 {
+    if ((Flags & (OMF_RO_DEVICE | OMF_WO_DEVICE)) != 0 && ((Root*)MyRoot())->IsDevice)
+        return;
     Preferences prefs;
     auto path = GetPath();
     String v = ToString();
@@ -19,6 +21,8 @@ void OMProperty::SavePref()
 
 void OMProperty::LoadPref()
 {
+    if ((Flags & (OMF_RO_DEVICE | OMF_WO_DEVICE)) != 0 && ((Root*)MyRoot())->IsDevice)
+        return;
     Preferences prefs;
     auto path = GetPath();
     prefs.begin(OMPrefNamespace, false);
