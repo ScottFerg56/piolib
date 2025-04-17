@@ -245,8 +245,6 @@ void Root::Setup(Agent* pagent)
     }
     else
     {
-        // request initial values from device
-        SendCmd("?R");
     }
 }
 
@@ -333,3 +331,29 @@ void Root::Command(String cmd)
 }
 
 void Root::SendCmd(String cmd) { pAgent->SendCmd(cmd); }
+
+void Root::ConnectionChanged(bool connected)
+{
+    if (connected)
+    {
+        if (IsDevice)
+        {
+
+        }
+        else
+        {
+            SendCmd("?R");  // request ALL current property values
+        }
+    }
+    else
+    {
+        if (IsDevice)
+        {
+
+        }
+        else
+        {
+            
+        }
+    }
+}

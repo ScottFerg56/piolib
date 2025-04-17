@@ -54,6 +54,15 @@ void ESPNAgent::Setup(uint8_t peerMacAddress[])
     esp_now_register_recv_cb(DataRecvCb);
 
     // flogi("ESP_NOW init complete");
+
+    if (pRoot->IsDevice)
+    {
+        SendCmd(".");   // send heartbeat to let controller know we're alive
+    }
+    else
+    {
+        Metro.PeriodMS += 1000;
+    }
 }
 
 void ESPNAgent::Run(void)
@@ -61,6 +70,26 @@ void ESPNAgent::Run(void)
     // check to send next file transfer packet
     if (FilePacketSend)
         SendNextFilePacket();
+
+    if (ConnectionChange)
+    {
+        ConnectionChange = false;
+        pRoot->ConnectionChanged(Connected);
+    }
+
+    if (Metro)
+    {
+        if (pRoot->IsDevice)
+        {
+            flogv("device heartbeat");
+            SendCmd(".");
+        }
+        else
+        {
+            flogv("device offline");
+            SetConnection(false);
+        }
+    }
 
     Agent::Run();
 }
@@ -71,7 +100,7 @@ void ESPNAgent::OnDataSent(esp_now_send_status_t status)
     if (status != ESP_NOW_SEND_SUCCESS)
     {
         flogw("Delivery Fail");
-        DataConnected = false;
+        SetConnection(false);
 
         if (FilePacketCount != 0)
         {
@@ -97,12 +126,15 @@ void ESPNAgent::OnDataSent(esp_now_send_status_t status)
 
 void ESPNAgent::OnDataRecv(const uint8_t *pData, int len)
 {
-    DataConnected = true;
+    SetConnection(true);
+    Metro.Reset();
     if (len > 0)
     {
         String data(pData, len);
         switch (data[0])
         {
+        case '.':   // heartbeat from device (actions taken above are all we need)
+            break;
         case '1':
             {
                 // first file transfer packet
@@ -231,12 +263,20 @@ bool ESPNAgent::Send(const uint8_t *pData, int len)
     esp_err_t result = esp_now_send(PeerInfo.peer_addr, pData, len);
     if (result != ESP_OK)
     {
-        DataConnected = false;   // don't get caught up in infinite logging loop!!
+        SetConnection(false);   // don't get caught up in infinite logging loop!!
         floge("Error sending data: %s", esp_err_to_name(result));
         DataSent = false;
         return false;
     }
     return true;
+}
+
+void ESPNAgent::SetConnection(bool connect)
+{
+    if (connect == Connected)
+        return;
+    ConnectionChange = true;
+    Connected = connect;
 }
 
 void ESPNAgent::StartFileTransfer(String filePath)

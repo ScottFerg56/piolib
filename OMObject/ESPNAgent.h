@@ -6,11 +6,12 @@
 #include <queue>
 #include "FS.h"
 #include "Agent.h"
+#include "Metronome.h"
 
 class ESPNAgent : public Agent
 {
 public:
-    ESPNAgent(FS* pfs, Root* proot) : Agent(pfs, proot) { };
+    ESPNAgent(FS* pfs, Root* proot) : Agent(pfs, proot), Metro(5000) { };
     void    Setup(uint8_t peerMacAddress[]);
     void    Run() override;
     bool    Send(const uint8_t *pData, int len) override;
@@ -23,8 +24,11 @@ public:
 private:
     esp_now_peer_info_t PeerInfo;
     static std::vector<ESPNAgent*> ESPNAgents;
+	Metronome	Metro;
+    void SetConnection(bool connect);
     bool DataSent = false;
-    bool DataConnected = false;
+    bool Connected = false;
+    bool ConnectionChange = false;
     struct FilePacketHdr
     {
         char        tag;

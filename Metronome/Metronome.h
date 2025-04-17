@@ -16,6 +16,8 @@ public:
         LastTime = t;
         return true;
     }
+
+    void Reset() { LastTime = millis(); }
     
 	operator bool() { return Test(); }
 

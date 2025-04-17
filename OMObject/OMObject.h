@@ -293,6 +293,7 @@ public:
     void            SendCmd(String cmd);
     virtual void    ReceivedFile(String fileName) {}
     Agent*          GetAgent() { return pAgent; }
+    void            ConnectionChanged(bool connected);
     bool            IsDevice = false;
 private:
     Agent*          pAgent;
