@@ -3,14 +3,20 @@
 
 void Agent::Run()
 {
-    if (!inputCommands.empty() && !lockInput)
+    if (!inputCommands.empty())
     {
-        // process input commnads
+        // process an input command
+        // NOTE: Disabling interrupts during the critical section removing
+        // an input command from the queue
+        // We just do one cmd at a time here to let the receive interrupt do its thing
+        noInterrupts();
         auto cmd = inputCommands.front();
         inputCommands.pop();
+        interrupts();
         flogv("Input command: [%s]", cmd.c_str());
         pRoot->Command(cmd);
         // prioritize input commands over output commands
+        // doing another in the next iteration of the Loop()
         return;
     }
 

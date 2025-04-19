@@ -61,6 +61,8 @@ void ESPNAgent::Setup(uint8_t peerMacAddress[])
     }
     else
     {
+        // longer timeout on the controller
+        // so we're not racing with the device to respond
         Metro.PeriodMS += 1000;
     }
 }
@@ -118,16 +120,15 @@ void ESPNAgent::OnDataSent(esp_now_send_status_t status)
             }
         }
     }
-    else if (FilePacketCount != 0)
+    else
     {
-        // flogv("File transfer packet %lu suceeded", FilePacketNumber);
+        SetConnection(true);
     }
 }
 
 void ESPNAgent::OnDataRecv(const uint8_t *pData, int len)
 {
     SetConnection(true);
-    Metro.Reset();
     if (len > 0)
     {
         String data(pData, len);
@@ -162,7 +163,7 @@ void ESPNAgent::OnDataRecv(const uint8_t *pData, int len)
                     FilePacketCount = 0;
                     FilePath = "";
                     SendCmd("4");   // terminate transfer
-                    return;
+                    break;
                 }
                 //Serial.println("chunk NUMBER = " + String(currentTransmitCurrentPosition));
                 File file = pFS->open(("/" + FilePath).c_str(), FILE_APPEND);
@@ -173,7 +174,7 @@ void ESPNAgent::OnDataRecv(const uint8_t *pData, int len)
                     FilePacketCount = 0;
                     FilePath = "";
                     SendCmd("4");   // terminate transfer
-                    return;
+                    break;
                 }
                 file.write(pData + sizeof(hdr), len - sizeof(hdr));
                 uint32_t fileSize = file.size();
@@ -223,7 +224,6 @@ void ESPNAgent::OnDataRecv(const uint8_t *pData, int len)
             {
                 // assume anyting else is an input command
                 // queue it up
-                lockInput = true;
                 while (data.length() > 0)
                 {
                     String cmd;
@@ -240,7 +240,6 @@ void ESPNAgent::OnDataRecv(const uint8_t *pData, int len)
                     }
                     inputCommands.push(cmd);
                 }
-                lockInput = false;
             }
             break;
         }
@@ -263,7 +262,7 @@ bool ESPNAgent::Send(const uint8_t *pData, int len)
     esp_err_t result = esp_now_send(PeerInfo.peer_addr, pData, len);
     if (result != ESP_OK)
     {
-        SetConnection(false);   // don't get caught up in infinite logging loop!!
+        SetConnection(false);
         floge("Error sending data: %s", esp_err_to_name(result));
         DataSent = false;
         return false;
@@ -273,6 +272,8 @@ bool ESPNAgent::Send(const uint8_t *pData, int len)
 
 void ESPNAgent::SetConnection(bool connect)
 {
+    if (connect)
+        Metro.Reset();
     if (connect == Connected)
         return;
     ConnectionChange = true;

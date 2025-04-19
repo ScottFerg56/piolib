@@ -15,7 +15,6 @@ public:
     void            SendCmd(String cmd) { outputCommands.push(cmd); }
 protected:
     FS*     pFS;
-    bool lockInput = false;
     std::queue<String> inputCommands;
     std::queue<String> outputCommands;
     Root* pRoot;
