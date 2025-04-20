@@ -12,7 +12,7 @@ void OMProperty::SavePref()
     auto path = GetPath();
     String v = ToString();
     prefs.begin(OMPrefNamespace, false);
-    flogi("property path: %s  name: %s  pref: [%s]", path, Name, v);
+    flogi("save pref: %s.%s [%s]", Parent->Name, Name, v);
     auto ret = prefs.putString(path.c_str(), v);
     if (ret == 0)
         floge("preferences write error property path: %s  name: %s  pref: [%s]", path, Name, v);
@@ -29,7 +29,7 @@ void OMProperty::LoadPref()
     String v = prefs.isKey(path.c_str()) ? prefs.getString(path.c_str()) : "";
     if (v.length() > 0)
     {
-        flogv("property path: %s  name: %s  pref: [%s]", path, Name, v);
+        flogv("load pref: %s.%s [%s]", Parent->Name, Name, v);
         FromString(v);
     }
     prefs.end();
@@ -43,7 +43,20 @@ void OMProperty::DumpPref()
     if (prefs.isKey(path.c_str()))
     {
         String v = prefs.getString(path.c_str());
-        flogi("property path: %s  name: %s  pref: [%s]", path, Name, v);
+        flogi("dump pref: %s.%s [%s]", Parent->Name, Name, v);
+    }
+    prefs.end();
+}
+
+void OMProperty::RemovePref()
+{
+    Preferences prefs;
+    auto path = GetPath();
+    prefs.begin(OMPrefNamespace, false);
+    if (prefs.isKey(path.c_str()))
+    {
+        prefs.remove(path.c_str());
+        flogi("remove pref: %s.%s", Parent->Name, Name);
     }
     prefs.end();
 }
@@ -239,8 +252,10 @@ void Root::Setup(Agent* pagent)
     if (IsDevice)
     {
         // traverse all properties to pull initial values
+        // and load preferences
         TraverseProperties([](OMProperty *p) {
             p->Pull();
+            p->LoadPref();
         });
     }
     else
@@ -289,8 +304,7 @@ void Root::Command(String cmd)
             }
             auto p = (OMProperty*)node;
             auto v = cmd.substring(inx);
-            flogv("assign %s to %s : %s", v.c_str(), p->Parent->Name, p->Name);
-            // UNDONE: no need for call to mod string??
+            flogv("assign %s to %s.%s", v.c_str(), p->Parent->Name, p->Name);
             p->FromString(v);
         }
         break;
@@ -323,6 +337,12 @@ void Root::Command(String cmd)
             ((OMObject*)node)->TraverseProperties([](OMProperty* p) { p->DumpPref(); });
         else
             ((OMProperty*)node)->DumpPref();
+        break;
+    case '-':
+        if (node->IsObject())
+            ((OMObject*)node)->TraverseProperties([](OMProperty* p) { p->RemovePref(); });
+        else
+            ((OMProperty*)node)->RemovePref();
         break;
     default:
         floge("invalid packet operation: [%c]", operation);

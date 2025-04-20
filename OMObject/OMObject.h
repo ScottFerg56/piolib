@@ -88,6 +88,7 @@ public:
     void                SavePref();
     void                LoadPref();
     void                DumpPref();
+    void                RemovePref();
 };
 
 template <typename T> class OMPropertyType : public OMProperty

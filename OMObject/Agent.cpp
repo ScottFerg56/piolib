@@ -37,7 +37,7 @@ void Agent::Run()
             strcpy((char*)&data[len], cmd.c_str());
             len += cmdLen;
         }
-        flogv("Send commands: [%s]", data);
+        // flogv("Send commands: [%s]", data);
         Send(data, len);
     }
 }

@@ -83,7 +83,7 @@ void ESPNAgent::Run(void)
     {
         if (pRoot->IsDevice)
         {
-            flogv("device heartbeat");
+            // flogv("device heartbeat");
             SendCmd(".");
         }
         else
