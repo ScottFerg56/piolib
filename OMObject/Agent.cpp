@@ -29,7 +29,7 @@ void Agent::Run()
         {
             auto cmd = outputCommands.front();
             auto cmdLen = cmd.length();
-            if (len + cmdLen > sizeof(data))
+            if (len + cmdLen + 1 > sizeof(data))
                 break;
             outputCommands.pop();
             if (len > 0)

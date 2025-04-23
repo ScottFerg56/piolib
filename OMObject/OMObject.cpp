@@ -2,7 +2,7 @@
 #include "Agent.h"
 #include <Preferences.h>
 
-const char* OMPrefNamespace = "rcvr OM";
+const char* OMPrefNamespace = "OM";
 
 void OMProperty::SavePref()
 {

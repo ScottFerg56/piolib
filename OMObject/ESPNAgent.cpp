@@ -264,6 +264,12 @@ bool ESPNAgent::Send(const uint8_t *pData, int len)
     {
         SetConnection(false);
         floge("Error sending data: %s", esp_err_to_name(result));
+        if (result == ESP_ERR_ESPNOW_ARG)
+        {
+            floge("len: %d", len);
+            if (len > 0)
+                floge("data: %s", pData);
+        }
         DataSent = false;
         return false;
     }
