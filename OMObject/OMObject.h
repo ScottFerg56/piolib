@@ -85,6 +85,7 @@ public:
     void                Pull();
     void                Push();
     void                Send();
+    void                PullSend() { Pull(); Send(); }
     void                SavePref();
     void                LoadPref();
     void                DumpPref();
@@ -97,8 +98,6 @@ public:
     OMPropertyType(char id, const char* name) : OMProperty(id, name), Value(T()) {}
     T Value;
         
-    void                SetSend(T value) { Value = value; Send(); }
-
     T Get() { return Value; }
     virtual void Set(T value)
     {
