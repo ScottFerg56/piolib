@@ -111,6 +111,7 @@ public:
         Value = value;
         Push();
     }
+    void SetSend(T value) { Value = value; Send(); }
     virtual bool Test(T value) = 0;
 };
 

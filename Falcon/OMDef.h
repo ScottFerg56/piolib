@@ -105,3 +105,10 @@ const OMObjDef    Objects[] =
     { 'd', "Debug",     nullptr,   DebugProps, &DebugConn },
     { }
 };
+
+const OMPropDef   RootProps[] =
+{
+    { 'x', "Restart",   OMT_LONG, OMF_WO_DEVICE, 1234, 1234  },
+    { 'f', "FreeSpace", OMT_LONG, OMF_RO_DEVICE, 0, LONG_MAX },
+    { }
+};
